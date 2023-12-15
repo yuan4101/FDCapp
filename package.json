@@ -1,0 +1,29 @@
+{
+  "name": "fdcapp",
+  "version": "1.0.0",
+  "description": "Food data app, based on Food Data Central (FDC) detailed info.",
+  "main": "index.js",
+  "scripts": {
+    "start": "npm run build && npm run dev",
+    "build": "tsc",
+    "dev": "nodemon build/index.js",
+    "test": "node build/index.js"
+  },
+  "keywords": [
+    "FDC"
+  ],
+  "author": "Juan Ante",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.6.2",
+    "body-parser": "^1.20.2",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "nodemon": "^3.0.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.9.1",
+    "typescript": "^5.2.2"
+  }
+}
