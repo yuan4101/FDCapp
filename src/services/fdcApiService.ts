@@ -2,8 +2,8 @@ import axios, { AxiosError } from 'axios';
 import dotenv from 'dotenv';
 
 dotenv.config();
-const fdcBaseUrl = process.env.FDC_API_URL;
-const fdcApiKey = process.env.FDC_API_KEY;
+const fdcBaseUrl = process.env.FDC_API_URL || "https://api.nal.usda.gov/fdc/v1";
+const fdcApiKey = process.env.FDC_API_KEY || "f2yYSvUmglsLdPDheaMWwpg6ca5lYJlHLtB0gcv3";
 
 interface FdcError {
   code: string;
