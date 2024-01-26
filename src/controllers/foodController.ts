@@ -1,16 +1,12 @@
 import e, { Request, Response } from 'express';
 import { FdcApiService } from '../services/fdcApiService';
+import { error } from 'console';
 
 interface FoodData {
-  totalServings: number,
   servings: string[][],
-  proximates: string[],
-  carbohydrates: string[],
-  minerals: string[],
-  vitaminsAndOtherComponents: string[],
-  lipids: string[],
-  totalNutrients: number,
-  [key: string]: any
+  nutrients: string[][],
+  totalServings: number,
+  totalNutrients: number
 };
 
 export class FoodController {
@@ -21,76 +17,72 @@ export class FoodController {
       const foodDetails = await FdcApiService.getFdcFoodDetails(foodId);
 
       let foodData: FoodData = {
-        totalServings: 0,
         servings: [],
-        proximates: [],
-        carbohydrates: [],
-        minerals: [],
-        vitaminsAndOtherComponents: [],
-        lipids: [],
+        nutrients: [],
+        totalServings: 0,
         totalNutrients: 0
       };
 
-      if (foodDetails && foodDetails.foodNutrients) {
+      if (foodDetails && foodDetails.foodNutrients){
 
+        // Servings
         if (foodDetails.foodPortions) {
           const foodPortions = foodDetails.foodPortions;
           foodData.totalServings = foodPortions.length;
-
-          console.log('\nPorciones:', foodData.totalServings);
+          console.log("\n");
           for (let index = 0; index < foodData.totalServings; index++) {
             const element = foodPortions[index];
-            console.log("\t", element.gramWeight + " " + element.modifier + " " + element.measureUnit.name);
-            foodData.servings.push([element.gramWeight, element.modifier + " " + element.measureUnit.name]);
+            if (element.modifier == undefined) {
+              console.log("\t", element.gramWeight + " " + element.measureUnit.name);
+              foodData.servings.push([element.gramWeight, element.measureUnit.name]);
+            } else{
+              console.log("\t", element.gramWeight + " " + element.modifier + " " + element.measureUnit.name);
+              foodData.servings.push([element.gramWeight, element.modifier + " " + element.measureUnit.name]);
+            }
           }
+          console.log('Servings:', foodData.totalServings);
+        } else {
+          foodData.totalServings = 1;
+          console.log('Servings: ', foodData.totalServings);
+          console.log("\t", "100 g");
+          foodData.servings.push(['100', 'g'])
         }
 
+        // Nutrients
         const foodNutrients = foodDetails.foodNutrients;
         foodData.totalNutrients = foodNutrients.length;
-        let currentTitle: string;
-        currentTitle = "";
+
+        let categoryList: string[] = [];
+        let category = '';
 
         for (let index = 0; index < foodData.totalNutrients; index++) {
           const element = foodNutrients[index];
 
-          if (element.amount == null && element.loq == null) {
-            console.log("\n", element.nutrient.name);
-            if (element.nutrient.name == "Proximates") {
-              element.nutrient.name = "proximates";
-            } else if (element.nutrient.name == "Carbohydrates") {
-              element.nutrient.name = "carbohydrates"
-            } else if (element.nutrient.name == "Minerals") {
-              element.nutrient.name = "minerals"
-            } else if (element.nutrient.name == "Vitamins and Other Components") {
-              element.nutrient.name = "vitaminsAndOtherComponents"
-            } else if (element.nutrient.name == "Lipids") {
-              element.nutrient.name = "lipids"
-            } 
-            currentTitle = element.nutrient.name;
-          }
-
-          if (element.amount || (element.amount == 0 && !element.loq)) {
+          if (element.nutrient.isNutrientLabel) {
+            category = element.nutrient.name
+            categoryList.push(category);
+            console.log("\n", category);
+          } else if (element.amount || (element.amount == 0 && !element.loq)) {
             console.log("\t", element.nutrient.name, element.amount, element.nutrient.unitName)
-            foodData[currentTitle].push(`${element.nutrient.name} ${element.amount} ${element.nutrient.unitName}`);
+            foodData["nutrients"].push([category, `${element.nutrient.name}`, `${element.amount}`, `${element.nutrient.unitName}`]);
           }
           else if (element.loq) {
             console.log("\t", element.nutrient.name, `<${element.loq}`, element.nutrient.unitName)
-            foodData[currentTitle].push(`${element.nutrient.name} <${element.loq} ${element.nutrient.unitName}`);
+            foodData["nutrients"].push([category, `${element.nutrient.name}`, `${element.loq}`, `<${element.nutrient.unitName}`]);
           }
         }
-        console.log('\nNutrientes del alimento:', foodData.totalNutrients);
+        if (categoryList.length == 0)
+          throw new Error("\nLas categorias no se cargaron correctamente");
+        foodData.totalNutrients -= categoryList.length;
+        console.log('\nNutrients: ', foodData.totalNutrients);
 
-        //return res.json({ nutrients }); // Devuelve solo la información de los nutrientes en la respuesta JSON
         console.log("------------------------------------------------------------------");
         console.log(foodData);
-        return res.json({ foodData }); 
-      } else {
-        //return res.json(foo);
-        return res.status(500).json({ error: 'La respuesta de la API no contiene información de nutrientes' });
+        return res.json({foodDetails});
       }
-    } catch (error) {
-      let errorMessage:string = "Error al obtener detalles del alimento desde la API de FDC"
-      res.status(500).json({ errorMessage, error });
+
+    } catch (error: any) {
+      res.status(500).json({message: error.message, error: error});
     }
   }
 }
