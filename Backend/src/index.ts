@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
+import cors from 'cors';
 import router from './routes/routes';
 import { FoodController } from './controllers/foodController';
 import { FdcApiService } from './services/fdcApiService';
@@ -7,6 +8,8 @@ import { FdcApiService } from './services/fdcApiService';
 dotenv.config();
 const app = express();
 const port = process.env.PORT;
+
+app.use(cors());
 
 app.use('/', router);
 
